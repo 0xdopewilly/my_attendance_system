@@ -1,0 +1,3 @@
+[submodule "student-attendance/lib/forge-std"]
+	path = student-attendance/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
