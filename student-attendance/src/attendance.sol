@@ -1,15 +1,15 @@
-//SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.19;
 
 contract Owned {
-    address owner;
+    address public owner;
 
     constructor() {
         owner = msg.sender;
     }
 
-    modifier onlyOwner {
+    modifier onlyOwner() {
         require(msg.sender == owner, "Caller is not the owner");
         _;
     }
@@ -24,8 +24,10 @@ contract Attendance is Owned {
         uint256 attendanceValue;
     }
 
-    mapping (uint256 => Student) studentList;
+    mapping(uint256 => Student) studentList;
     uint256[] public studentIdList;
+
+    mapping(address => bool) public authorizedClassReps;
 
     event studentCreationEvent(
         string fName,
@@ -33,7 +35,25 @@ contract Attendance is Owned {
         uint256 age
     );
 
-    function createStudent(uint _studId, uint _age, string memory _fName, string memory _lName) onlyOwner public {
+    event classRepAuthorized(address classRep);
+    event classRepRevoked(address classRep);
+
+    modifier onlyAuthorized() {
+        require(msg.sender == owner || authorizedClassReps[msg.sender], "Caller is not authorized");
+        _;
+    }
+
+    function authorizeClassRep(address _classRep) public onlyOwner {
+        authorizedClassReps[_classRep] = true;
+        emit classRepAuthorized(_classRep);
+    }
+
+    function revokeClassRep(address _classRep) public onlyOwner {
+        authorizedClassReps[_classRep] = false;
+        emit classRepRevoked(_classRep);
+    }
+
+    function createStudent(uint _studId, uint _age, string memory _fName, string memory _lName) public onlyAuthorized {
         Student storage student = studentList[_studId];
         
         student.age = _age;
@@ -44,7 +64,7 @@ contract Attendance is Owned {
         emit studentCreationEvent(_fName, _lName, _age);
     }
     
-    function incrementAttendance(uint _studId) onlyOwner public {
+    function incrementAttendance(uint _studId) public onlyAuthorized {
         studentList[_studId].attendanceValue = studentList[_studId].attendanceValue + 1;
     }
     
